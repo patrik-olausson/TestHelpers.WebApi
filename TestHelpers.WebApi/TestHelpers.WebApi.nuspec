@@ -6,7 +6,7 @@
     <title>$title$</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
-    <tags>TestHelpers TestHelpers.Utils</tags>
+    <tags>TestHelpers TestHelpers.WebApi</tags>
     <description>$description$</description>
     <copyright>$copyright$</copyright>
     <language>en-US</language>
