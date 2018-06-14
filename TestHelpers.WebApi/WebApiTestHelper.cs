@@ -9,59 +9,120 @@ namespace TestHelpers.WebApi
     public abstract class WebApiTestHelper : IDisposable
     {
         private readonly Action<string> _testOutput;
+        private readonly Action<HttpClient> _configureHttpClientAction;
         private readonly Lazy<TestServer> _owinTestServer;
         protected HttpClient HttpClient => _owinTestServer.Value.HttpClient;
 
-        protected WebApiTestHelper(Action<string> testOutput, Action<HttpClient> configureHttpClientAction = null)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="testOutput"></param>
+        /// <param name="configureHttpClientAction">Configuration you want to perform before every call</param>
+        protected WebApiTestHelper(
+            Action<string> testOutput, 
+            Action<HttpClient> configureHttpClientAction = null)
         {
             _testOutput = testOutput;
-            _owinTestServer = new Lazy<TestServer>(() =>
-            {
-                var testServer = TestServer.Create(ConfigureApp);
-                configureHttpClientAction?.Invoke(testServer.HttpClient);
-
-                return testServer;
-            });
+            _configureHttpClientAction = configureHttpClientAction;
+            _owinTestServer = new Lazy<TestServer>(() => TestServer.Create(ConfigureApp));
         }
 
         protected abstract void ConfigureApp(IAppBuilder appBuilder);
 
-        public virtual async Task<AssertableHttpResponse> GetAsync(string requestUri, bool ensureSuccessStatusCode = true)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="requestUri"></param>
+        /// <param name="ensureSuccessStatusCode"></param>
+        /// <param name="preRequestConfigureHttpClientAction">Configuration you want to perform before this call (if you have 
+        /// specified an configuration action in the constructor it will also be called!)</param>
+        /// <returns></returns>
+        public virtual async Task<AssertableHttpResponse> GetAsync(
+            string requestUri, 
+            bool ensureSuccessStatusCode = true, 
+            Action<HttpClient> preRequestConfigureHttpClientAction = null)
         {
-            var response = await HttpClient.GetAsync(requestUri);
+            var httpClient = HttpClient;
+            _configureHttpClientAction?.Invoke(httpClient);
+            preRequestConfigureHttpClientAction?.Invoke(httpClient);
+
+            var response = await httpClient.GetAsync(requestUri);
+
             return await CreateAssertableResponseAsync(response, $"GET {requestUri}", ensureSuccessStatusCode);
         }
 
-        public virtual async Task<AssertableHttpResponse> PostAsJsonAsync<T>(string requestUri, T value, bool ensureSuccessStatusCode = true)
+        public virtual async Task<AssertableHttpResponse> PostAsJsonAsync<T>(
+            string requestUri, 
+            T value, bool ensureSuccessStatusCode = true, 
+            Action<HttpClient> preRequestConfigureHttpClientAction = null)
         {
-            var response = await HttpClient.PostAsJsonAsync(requestUri, value);
+            var httpClient = HttpClient;
+            _configureHttpClientAction?.Invoke(httpClient);
+            preRequestConfigureHttpClientAction?.Invoke(httpClient);
+
+            var response = await httpClient.PostAsJsonAsync(requestUri, value);
+
             return await CreateAssertableResponseAsync(response, $"POST {requestUri}", ensureSuccessStatusCode);
         }
 
-        public virtual async Task<AssertableHttpResponse> PutAsJsonAsync<T>(string requestUri, T value, bool ensureSuccessStatusCode = true)
+        public virtual async Task<AssertableHttpResponse> PutAsJsonAsync<T>(
+            string requestUri,
+            T value, 
+            bool ensureSuccessStatusCode = true,
+            Action<HttpClient> preRequestConfigureHttpClientAction = null)
         {
-            var response = await HttpClient.PutAsJsonAsync(requestUri, value);
+            var httpClient = HttpClient;
+            _configureHttpClientAction?.Invoke(httpClient);
+            preRequestConfigureHttpClientAction?.Invoke(httpClient);
+
+            var response = await httpClient.PutAsJsonAsync(requestUri, value);
+
             return await CreateAssertableResponseAsync(response, $"PUT {requestUri}", ensureSuccessStatusCode);
         }
 
-        public virtual async Task<AssertableHttpResponse> DeleteAsync(string requestUri, bool ensureSuccessStatusCode = true)
+        public virtual async Task<AssertableHttpResponse> DeleteAsync(
+            string requestUri, 
+            bool ensureSuccessStatusCode = true,
+            Action<HttpClient> preRequestConfigureHttpClientAction = null)
         {
-            var response = await HttpClient.DeleteAsync(requestUri);
+            var httpClient = HttpClient;
+            _configureHttpClientAction?.Invoke(httpClient);
+            preRequestConfigureHttpClientAction?.Invoke(httpClient);
+
+            var response = await httpClient.DeleteAsync(requestUri);
+
             return await CreateAssertableResponseAsync(response, $"DELETE {requestUri}", ensureSuccessStatusCode);
         }
 
-        public virtual async Task<AssertableHttpResponse> OptionsAsync<T>(string requestUri, T value, bool ensureSuccessStatusCode = true)
+        public virtual async Task<AssertableHttpResponse> OptionsAsync<T>(
+            string requestUri,
+            T value, 
+            bool ensureSuccessStatusCode = true,
+            Action<HttpClient> preRequestConfigureHttpClientAction = null)
         {
+            var httpClient = HttpClient;
+            _configureHttpClientAction?.Invoke(httpClient);
+            preRequestConfigureHttpClientAction?.Invoke(httpClient);
             var request = new HttpRequestMessage(HttpMethod.Options, requestUri);
-            var response = await HttpClient.SendAsync(request);
+
+            var response = await httpClient.SendAsync(request);
             return await CreateAssertableResponseAsync(response, $"OPTIONS {requestUri}", ensureSuccessStatusCode);
         }
 
-        public virtual async Task<AssertableHttpResponse> PatchAsync<T>(string requestUri, T value, bool ensureSuccessStatusCode = true)
+        public virtual async Task<AssertableHttpResponse> PatchAsync<T>(
+            string requestUri, 
+            T value, 
+            bool ensureSuccessStatusCode = true,
+            Action<HttpClient> preRequestConfigureHttpClientAction = null)
         {
             var method = new HttpMethod("PATCH");
             var request = new HttpRequestMessage(method, requestUri);
-            var response = await HttpClient.SendAsync(request);
+            var httpClient = HttpClient;
+            _configureHttpClientAction?.Invoke(httpClient);
+            preRequestConfigureHttpClientAction?.Invoke(httpClient);
+
+            var response = await httpClient.SendAsync(request);
+
             return await CreateAssertableResponseAsync(response, $"PATCH {requestUri}", ensureSuccessStatusCode);
         }
 
