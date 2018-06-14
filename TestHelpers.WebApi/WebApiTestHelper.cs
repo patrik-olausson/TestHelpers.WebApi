@@ -12,10 +12,16 @@ namespace TestHelpers.WebApi
         private readonly Lazy<TestServer> _owinTestServer;
         protected HttpClient HttpClient => _owinTestServer.Value.HttpClient;
 
-        protected WebApiTestHelper(Action<string> testOutput)
+        protected WebApiTestHelper(Action<string> testOutput, Action<HttpClient> configureHttpClientAction = null)
         {
             _testOutput = testOutput;
-            _owinTestServer = new Lazy<TestServer>(() => TestServer.Create(ConfigureApp));
+            _owinTestServer = new Lazy<TestServer>(() =>
+            {
+                var testServer = TestServer.Create(ConfigureApp);
+                configureHttpClientAction?.Invoke(testServer.HttpClient);
+
+                return testServer;
+            });
         }
 
         protected abstract void ConfigureApp(IAppBuilder appBuilder);
